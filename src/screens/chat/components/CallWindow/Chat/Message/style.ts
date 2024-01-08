@@ -3,7 +3,7 @@ import styled from "styled-components/native"
 export const Message = styled.View`
   border-radius: 20px;
   padding: 5px 10px;
-  margin: 5px 0;
+  margin: 3px 0;
   display: flex;
   flex-direction: column;
   max-width: 90%;
@@ -12,6 +12,7 @@ export const Message = styled.View`
 export const MyMessage = styled(Message)`
   align-items: flex-end;
   align-self: flex-end;
+  margin-right: 10px;
   background-color: rgba(52, 200, 90, 255);
   border-bottom-right-radius: none;
   color: whitesmoke;

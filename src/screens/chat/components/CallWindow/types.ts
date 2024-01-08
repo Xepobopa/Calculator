@@ -9,6 +9,7 @@ export type CallWindowProps = {
     finishCall: (isCaller: boolean) => void;
     chat: TUserMessage[];
     nickname: string;
+    setPeerNicknameFunc: (nickname: string) => void;
 }
 
 export type Theme = {

@@ -1,9 +1,11 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import { GestureResponderEvent, StyleSheet, Vibration, Appearance, SafeAreaView } from "react-native";
+import { GestureResponderEvent, StyleSheet, Vibration, Appearance, SafeAreaView, View, Keyboard } from "react-native";
 import { Svg } from "../../../../assets/icons";
 import {
     ButtonContainer,
     ButtonIcon,
+    ButtonIconBackward,
+    ButtonIconCall,
     ButtonIconDisable,
     ButtonIconSend,
     Header,
@@ -25,6 +27,7 @@ import { ChatContext, PeerConnectionContext } from '../../chat';
 import {v4 as uuidv4} from 'uuid';
 import { TInternalMessage, TMessageEnum, TUserMessage } from '../../types/chat';
 import { Text } from 'react-native-svg';
+import { NavigationContext, useNavigation } from '@react-navigation/native';
 
 export const CallWindow = ({
     remoteSrc,
@@ -33,18 +36,20 @@ export const CallWindow = ({
     mediaDevice,
     finishCall,
     chat,
-    nickname
+    nickname,
+    setPeerNicknameFunc
 }: CallWindowProps) => {
     const remoteVideo = useRef<any>();
     const localVideo = useRef<any>();
     const [audio, setAudio] = useState(config?.audio);
     const [newMessageText, setNewMessageText] = useState<string>('');
     const beepEndSoundRef = useRef<Sound>(null!);
-    const [peerNickname, setPeerNickname] = useState<string>('';)
+    const [peerNickname, setPeerNickname] = useState<string>('');
 
     const [theme, setTheme] = useState<string>(Appearance.getColorScheme() || 'light');
 
     const { connection } = useContext(PeerConnectionContext);
+    const navigation = useNavigation();
 
     // function activateKeepAwake() {
     //     NativeModules.KCKeepAwake.activate();
@@ -56,19 +61,24 @@ export const CallWindow = ({
     //     NativeModules.KCKeepAwake.deactivate();
     // }
 
+    // listen for any internal messages
+
     useEffect(() => {
         // send internal message to hand over a nickname
-        connection.sendMessage({ peerNickname: nickname } as TInternalMessage);
-        // listen for any internal messages
-        connection.listenInternalMessages((message: TInternalMessage) => {
+        setTimeout(() => {
+            connection?.sendMessage({ peerNickname: nickname } as TInternalMessage);   
+        }, 1000)     
+        connection?.listenInternalMessages((message: TInternalMessage) => {
             setPeerNickname(message.peerNickname);
+            setPeerNicknameFunc(message.peerNickname);
+            console.log('PeerNickname is -> ', message.peerNickname, "!!!");
         });
 
         Appearance.addChangeListener(({ colorScheme }) => {
             setTheme(colorScheme || 'light');
-        }) 
+        });
 
-        Vibration.vibrate([0.3, 0.3])
+        Vibration.vibrate([0.3, 0.3]);
         // activateKeepAwake(); 
     }, [])
 
@@ -88,27 +98,27 @@ export const CallWindow = ({
         })
     }, [])
 
-    useEffect(() => {
-        if (remoteVideo.current && remoteSrc) {
-            remoteVideo.current.srcObject = remoteSrc
-        }
-        if (localVideo.current && localSrc) {
-            localVideo.current.srcObject = localSrc
-        }
-    }, [remoteSrc, localSrc])
+    // useEffect(() => {
+    //     if (remoteVideo.current && remoteSrc) {
+    //         remoteVideo.current.srcObject = remoteSrc
+    //     }
+    //     if (localVideo.current && localSrc) {
+    //         localVideo.current.srcObject = localSrc
+    //     }
+    // }, [remoteSrc, localSrc])
 
-    useEffect(() => {
-        if (mediaDevice) {
-            mediaDevice.toggle('Audio', audio)
-        }
-    }, [mediaDevice])
+    // useEffect(() => {
+    //     if (mediaDevice) {
+    //         mediaDevice.toggle('Audio', audio)
+    //     }
+    // }, [mediaDevice])
 
-    const toggleMediaDevice = (deviceType: 'audio' | 'video') => {
-        if (deviceType === 'audio') {
-            setAudio(!audio)
-            mediaDevice.toggle('Audio')
-        }
-    }
+    // const toggleMediaDevice = (deviceType: 'audio' | 'video') => {
+    //     if (deviceType === 'audio') {
+    //         setAudio(!audio)
+    //         mediaDevice.toggle('Audio')
+    //     }
+    // }
 
     const onHandleChange = (text: string) => {
         setNewMessageText(text);
@@ -118,78 +128,88 @@ export const CallWindow = ({
         if (!newMessageText) {
             return;
         }
+
         setNewMessageText('');
-        // onNewMessage({ from: nickname, text: newMessaxsge });
+        Keyboard.dismiss();
         connection.sendMessage({ text: newMessageText, from: nickname, type: TMessageEnum.User });
         chat.push({ text: newMessageText, from: nickname, type: TMessageEnum.User } as TUserMessage);
     }
 
+    const onHandleBackward = (event: GestureResponderEvent) => {
+        navigation.goBack();
+    }
+
     return (
-        <Window $theme={theme}>
-            <MainContainer>
-                <Header>
-                    <RTCView streamURL={remoteSrc.toURL()} />
-                    <RowContainer>
-                        <Title style={{ color: 'white' }}>CHAT</Title>
-                        <Svg.ConnectionP2P fill={'#fff'} />
-                    </RowContainer>
-                    <ButtonContainer>
-                        <ButtonIcon
-                            onPress={() => toggleMediaDevice('audio')}
-                        >
-                            <Svg.Smartphone fill={'#fff'} />
-                        </ButtonIcon>
-                        <ButtonIconDisable
-                          onPress={() => {
-                            // deactivateKeepAwake();
-                            finishCall(true)
-                        }}>
-                            <Svg.PhoneDisable fill={'#fff'} />
-                        </ButtonIconDisable>
-                    </ButtonContainer>
-                    <Text>{peerNickname}</Text>
-                </Header>
+        <ThemeProvider theme={{ main: theme }}>
+            <Window>
+                <MainContainer>
+                    <Header style={styles.headerBorderBottom}>
+                        <RTCView streamURL={remoteSrc.toURL()} />
+                            <RowContainer>
+                                <ButtonIconBackward onPress={onHandleBackward}>
+                                    <Svg.Backward fill={theme === 'light' ? '#000' : '#fff'}/>
+                                    <Text> Back</Text>
+                                </ButtonIconBackward>
+                                <Title>{peerNickname}</Title>
+                                <Svg.ConnectionP2P fill={theme === 'light' ? '#000' : '#fff'} />
+                            </RowContainer>
+                        <ButtonContainer>
+                            <ButtonIconDisable
+                            onPress={() => {
+                                // deactivateKeepAwake();
+                                finishCall(true)
+                            }}>
+                                <Svg.PhoneDisable fill={'#fff'} />
+                            </ButtonIconDisable>
+                        </ButtonContainer>
+                    </Header>
 
-                <KeyboardAwareScrollView contentContainerStyle={{ flex: 1 }}>
-                    <MessagesArea>
-                        {chat.map(message => {
-                            return (
-                                <Message key={uuidv4()} messageData={message} theme={theme} nickname={nickname}/>
-                            )
-                        })}
-                    </MessagesArea>
+                
+                    <KeyboardAwareScrollView 
+                        contentContainerStyle={{ flex: 1 }} 
+                        keyboardOpeningTime={0}
+                        extraHeight={200}
+                        keyboardShouldPersistTaps="handled">
+                        <MessagesArea>
+                            {chat.map(message => {
+                                return (
+                                    <Message key={uuidv4()} messageData={message} theme={theme} nickname={nickname}/>
+                                )
+                            })}
+                        </MessagesArea>
 
-                    <ThemeProvider theme={{ main: theme }}>
-                        <SafeAreaView >
-                            <TextInputArea>
-                                <RowContainer>
-                                    <StyledTextInput
-                                        placeholder="SMS"
-                                        placeholderTextColor={'#454545'}
-                                        onChangeText={onHandleChange}
-                                        value={newMessageText} />
-                                    <ButtonIconSend style={{ borderRadius: 13 }} onPress={onHandleSend}>
-                                        <Svg.Send fill={'#fff'} />
-                                    </ButtonIconSend>
-                                </RowContainer>
-                            </TextInputArea>
-                        </SafeAreaView>
-                            {/* <TextInputArea>
-                                <RowContainer>
-                                    <StyledTextInput
-                                        placeholder="SMS"
-                                        placeholderTextColor={'#454545'}
-                                        onChangeText={onHandleChange}
-                                        value={newMessage} />
-                                    <ButtonIconSend style={{ borderRadius: 13 }} onPress={onHandleSend}>
-                                        <Svg.Send fill={'#fff'} />
-                                    </ButtonIconSend>
-                                </RowContainer>
-                            </TextInputArea> */}
-                    </ThemeProvider>
-                </KeyboardAwareScrollView>
-            </MainContainer>
-        </Window>
+                        
+                            <SafeAreaView >
+                                <TextInputArea>
+                                    <RowContainer>
+                                        <ButtonIconCall>
+                                            <Svg.Phone 
+                                            fill={theme === "light" ? '#000' : '#fff'} 
+                                            width={13} 
+                                            height={13}/>
+                                        </ButtonIconCall>
+                                        <StyledTextInput
+                                            placeholder="SMS"
+                                            placeholderTextColor={
+                                                theme === "light" 
+                                                ? 'rgba(0, 0, 0, 0.25)' 
+                                                : 'rgba(255, 255, 255, 0.25)'
+                                            }
+                                            onChangeText={onHandleChange}
+                                            multiline={true}
+                                            value={newMessageText} />
+                                        <View>
+                                            <ButtonIconSend style={{...styles.verifyButton, borderRadius: 13}} onPress={onHandleSend}>
+                                                <Svg.Send fill={'#000000'} />
+                                            </ButtonIconSend>
+                                        </View>
+                                    </RowContainer>
+                                </TextInputArea>
+                            </SafeAreaView>
+                    </KeyboardAwareScrollView>
+                </MainContainer>
+            </Window>
+        </ThemeProvider>
     )
 }
 
@@ -203,5 +223,14 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.6,
         shadowRadius: 25,
         elevation: 3,
+    },
+    verifyButton: {
+        position: 'absolute',
+        alignSelf: 'center',
+        right: 0,
+    },
+    headerBorderBottom: {
+        borderBottomColor: 'rgba(0, 0, 0, 0.25)',
+        borderBottomWidth: 0.2,
     }
 });

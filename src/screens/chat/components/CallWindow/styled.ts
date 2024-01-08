@@ -1,14 +1,15 @@
 import styled from "styled-components/native";
 import {View, Text, TextInput, TouchableOpacity, ScrollView} from "react-native";
+import { Colors } from "react-native/Libraries/NewAppScreen";
 
-export const Window = styled.View<{ $theme: string }>`
+export const Window = styled.View`
   flex: 1;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   position: absolute;
-  background-color: ${props => props.$theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)'};
+  background-color: ${props => props.theme.main === 'light' ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)'};
 `
 
 export const MainContainer = styled.View`
@@ -22,11 +23,11 @@ export const Header = styled.View`
   padding-top: 35px;
   justify-content: center;
   align-items: center;
-  background-color: rgba(40,46,51,255);
+  background-color:  ${props => props.theme.main === 'light' ? '#f5f5f5' : '#1e1e1e'};
 `
 
 export const ButtonIcon = styled.TouchableOpacity`
-  background-color: #0275d8;
+  background-color: "#0275d8";
   padding: 13px;
   border-radius: 25px;
   display: flex;
@@ -34,20 +35,46 @@ export const ButtonIcon = styled.TouchableOpacity`
   align-items: center;
   margin: 8px;
 `
-export const ButtonIconSend = styled(ButtonIcon)`
-  background-color: #0275d8;
-  padding: 8px;
-  border-radius: 25px;
-  position: 'fixed';
-  align-self: 'center';
-  right: 0;
+
+export const ButtonIconCall = styled(ButtonIcon) `
+  background-color: ${props => props.theme.main === 'light' ? '#e8e9eb' : '#1f1f1f'};
 `
+
+
+export const ButtonIconSend = styled(ButtonIcon)`
+  background-color: rgba(52, 200, 90, 255);
+  padding: 3px;
+  margin-right: 10px;
+  border-radius: 25px;
+  align-self: 'center';
+  position: 'absolute';
+  right: 0;
+  bottom: -22.5px;
+`
+
+export const ButtonIconBackward = styled(ButtonIcon)`
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  left: 0;
+  align-items: normal;
+  margin-left: 10px;
+`
+
+//background-color: "#0275d8";
+  // padding: 13px;
+  // border-radius: 25px;
+  // display: flex;
+  // justify-content: center;
+  // align-items: center;
+  // margin: 8px;
 
 export const ButtonIconDisable = styled(ButtonIcon)`
   background-color: #d9534f;
 `
 
 export const Title = styled(Text)`
+  color: ${props => props.theme.main === 'light' ? '#000' : '#fff'};
   padding: 10px 5px;
   text-align: center;
   font-size: 27px;
@@ -57,11 +84,11 @@ export const StyledTextInput = styled.TextInput`
   flex: 1;
   color: ${props => (props.theme.main === 'light' ? 'black' : 'whitesmoke')};
   padding: 7px 15px;
-  border: 1px solid #434343;
-  margin-left: 5px;
+  border: 1px solid ${props => props.theme.main === "light" ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.25)'};
+  margin-right: 5px;
   font-size: 18px;
   border-radius: 20px;
-  background-color: ${props => (props.theme.main === 'light' ? 'whitesmoke' : 'black')};
+  background-color: ${props => (props.theme.main === 'light' ? 'white' : 'black')};
 `
 
 export const RowContainer = styled(View)`
@@ -83,10 +110,13 @@ export const Footer = styled(View)`
 `
 
 export const TextInputArea = styled(View)`
-  padding-bottom: 20px
+
 `
 
 export const MessagesArea = styled(ScrollView)`
   margin: 0 10px;
-  flex: 1
+  margin-bottom: 4px;
+  margin-top: 7px;
+  bottom: 5px;
+  flex: 1;
 `

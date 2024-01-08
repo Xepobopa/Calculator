@@ -4,7 +4,7 @@ import socket from './socket'
 import {RTCIceCandidate, RTCPeerConnection, RTCSessionDescription} from 'react-native-webrtc'
 import { TURN_URL, TURN_USERNAME, TURN_CREDENTIALS } from "@env";
 import Security from './security';
-import { TInternalMessage, TUserMessage } from '../types/chat';
+import { TInternalMessage, TMessage, TMessageEnum, TUserMessage } from '../types/chat';
 import RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel';
 import { MediaDeviceConfigType } from '../components/CallModal/types';
 
@@ -163,7 +163,10 @@ class PeerConnection extends Emitter {
             this.pc?.addEventListener('datachannel', (event: any) => {
                 const channel = event.channel;
                 channel.addEventListener('message', (data: any) => {
-                    cb(JSON.parse(this.security.decryptObject(data.data)));
+                    const res: TMessage = JSON.parse(this.security.decryptObject(data.data)) as TMessage;
+                    if (res.type === TMessageEnum.User) {
+                        cb(res as TUserMessage);
+                    }
                 })
             });
         } catch (e) {
@@ -178,7 +181,12 @@ class PeerConnection extends Emitter {
             this.pc?.addEventListener('datachannel', (event: any) => {
                 const channel = event.channel;
                 channel.addEventListener('message', (data: any) => {
-                    cb(JSON.parse(this.security.decryptObject(data.data)) as TInternalMessage);
+                    const res: TMessage = JSON.parse(this.security.decryptObject(data.data)) as TMessage;
+                    // TODO: Remove ToSting() in prod
+                    if (res.type === "Internal" as TMessageEnum) {
+                        console.log('[INFO] RES IS INTERNAL!!!')
+                        cb(res as TInternalMessage);
+                    }
                 })
             });
         } catch (e) {

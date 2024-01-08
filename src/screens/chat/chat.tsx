@@ -21,6 +21,8 @@ import { TUserMessage } from "./types/chat";
 import { MediaDeviceConfigType } from './components/CallModal/types';
 import { useNavigation } from '@react-navigation/native';
 import { TChatContext, TPeerConnectionContext } from './types/types';
+import { CallingScreen } from './components/CallingScreen/CallingScreen';
+import { CallScreen } from './components/CallScreen/CallScreen';
 
 export const PeerConnectionContext = createContext<TPeerConnectionContext>({
     connection: {} as PeerConnection
@@ -43,6 +45,8 @@ export default function Chat() {
     const [calling, setCalling] = useState<boolean>(false);
 
     const [showModal, setShowModal] = useState(false);
+    const [showCallingScreen, setShowCallingScreen] = useState<boolean>(false);
+    const [showCallScreen, setShowCallScreen] = useState<boolean>(false);
 
     const [localSrc, setLocalSrc] = useState(null);
     const [remoteSrc, setRemoteSrc] = useState(null);
@@ -52,6 +56,7 @@ export default function Chat() {
 
     const [chat, setChat] = useState<TUserMessage[]>([]);
     const [nickname, setNickname] = useState<string>('');
+    const [peerNickname, setPeerNickname] = useState<string>('');
 
     // const [sideRequestsIntervalId, setSideRequestsIntervalId] = useState<Timeout>(null!);
 
@@ -257,6 +262,29 @@ export default function Chat() {
         beepSoundRef.current?.release();
     }
 
+    const startRingtone = () => {
+        // TODO: make tingtone
+    }
+
+    const stopRingtone = () => {
+        // TODO: make tingtone
+    }
+
+    const onCallingReject = () => {
+        console.log('Reject!');
+        setShowCallingScreen(false);
+        stopRingtone();
+    }
+
+    const onCallingSuccess = () => {
+        setShowCallScreen(true);
+        stopRingtone();
+    }
+
+    const onCallEnd = () => {
+        setShowCallScreen(false);
+    }
+
     return (
         <LinearGradient start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             colors={['#f64f59', '#c471ed', '#12c2e9']}
@@ -274,19 +302,35 @@ export default function Chat() {
                         rejectCall={rejectCall}
                     />
                 )}
-                {remoteSrc && (
-                    <PeerConnectionContext.Provider value={{ connection: pc! }}>
-                        <CallWindow
-                            localSrc={localSrc}
-                            remoteSrc={remoteSrc}
-                            config={config}
-                            mediaDevice={pc?.mediaDevice}
-                            finishCall={finishCall}
-                            chat={chat}
-                            nickname={nickname}
-                            />
-                    </PeerConnectionContext.Provider>
-                )}
+                <PeerConnectionContext.Provider value={{ connection: pc! }}>
+                    {remoteSrc && (
+                        
+                            <CallWindow
+                                localSrc={localSrc}
+                                remoteSrc={remoteSrc}
+                                config={config}
+                                mediaDevice={pc?.mediaDevice}
+                                finishCall={finishCall}
+                                chat={chat}
+                                nickname={nickname}
+                                setPeerNicknameFunc={setPeerNickname}
+                                />
+                        
+                    )}
+                    {showCallingScreen && (
+                        <CallingScreen 
+                            peerNickname={peerNickname}
+                            onReject={onCallingReject}
+                            onSuccess={onCallingSuccess}/>
+                    )}
+                    {
+                        showCallScreen && (
+                            <CallScreen 
+                                peerNickname={peerNickname}
+                                onEndCall={onCallEnd}
+                                />
+                    )}
+                </PeerConnectionContext.Provider>
             </View>
         </LinearGradient>
     )

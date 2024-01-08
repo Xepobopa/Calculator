@@ -1,8 +1,8 @@
 import { I18nManager } from "react-native";
 
 export enum TMessageEnum {
-    User,
-    Internal
+    User = 'User',
+    Internal = 'Intrenal'
 }
 
 export type TMessage = {
@@ -21,7 +21,7 @@ export type TUserMessage = {
  * A Type witch represent a not user message for internall app usage
  */
 export type TInternalMessage = {
-    peerNickname: string;
+    peerNickname: TMessageEnum;
 } & TMessage
 
 export type Chat = {
