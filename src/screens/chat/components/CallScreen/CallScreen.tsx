@@ -1,20 +1,24 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, Vibration, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { ButtonContainer, ButtonIcon, Header, Row, Title } from './styled';
+import { ButtonContainer, ButtonIcon, ButtonRow, Footer, Header, Row, Title } from './styled';
 import { Svg } from '../../../../assets/icons';
 import { CallScreenProps } from './types';
 import { PeerConnectionContext } from '../../chat';
+import { RTCView } from 'react-native-webrtc';
 
-export const CallScreen = ({ peerNickname, onEndCall, mediaDevice, remoteSrc, config }: CallScreenProps) => {
+export const CallScreen = ({ peerNickname, onEndCall, remoteSrc, config }: CallScreenProps) => {
     const remoteVideo = useRef<any>();
     const localVideo = useRef<any>();
     const [audio, setAudio] = useState(config?.audio);
-    const [isMuted, setIsMuted] = useState<boolean>(false);
+    const [isMuted, setIsMuted] = useState<boolean>(true);
     
     const { connection } = useContext(PeerConnectionContext);
+    const mediaDevice = connection.mediaDevice;
     
     useEffect(() => {
+        console.log('Call Screen!!')
+        connection.mediaDevice.unmute('Audio');
         Vibration.vibrate([0.3, 0.3]);
     })
 
@@ -23,39 +27,41 @@ export const CallScreen = ({ peerNickname, onEndCall, mediaDevice, remoteSrc, co
             remoteVideo.current.srcObject = remoteSrc
         }
     }, [remoteSrc])
-
+   
     useEffect(() => {
-        if (mediaDevice) {
-            mediaDevice.toggle('Audio', audio)
-        }
-    }, [mediaDevice]);
+        isMuted
+        ? connection.mediaDevice.unmute('Audio') 
+        : connection.mediaDevice.mute('Audio');
+    }, [isMuted]);
 
     const onMuteToggle = () => {
-        setAudio(!audio)
-        mediaDevice.toggle('Audio')
+        setIsMuted(!isMuted);
     }
 
     return (
         <LinearGradient start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             colors={['#6d6e70', '#383b42']}
             style={styles.linearGradient}>
+        <RTCView streamURL={remoteSrc.toURL()} />
             
         <Header>
             <Row><Text style={{fontSize: 25, color: 'white'}}>Audicall</Text></Row>
             <Row><Title>{peerNickname}</Title></Row>
         </Header>
 
-        <Row style={{ flex: 1, bottom: 0, marginBottom: 50 }}>
-            <ButtonIcon isDark={isMuted} onPress={onMuteToggle}>
-                {/* Mute */}
-                <Svg.PhoneDown fill={'white'}/>
-            </ButtonIcon>
+        <Footer>
+            <ButtonRow style={{ flex: 1, bottom: 0, marginBottom: 50 }}>
+                <ButtonIcon isRed onPress={onEndCall}>
+                    {/* End */}
+                    <Svg.PhoneDown fill={'white'} width={60} height={60}/>
+                </ButtonIcon>
 
-            <ButtonIcon isRed onPress={onEndCall}>
-                {/* End */}
-                <Svg.PhoneDown fill={'white'}/>
-            </ButtonIcon>
-        </Row>
+                <ButtonIcon isDark={isMuted} onPress={onMuteToggle}>
+                    {/* Mute */}
+                    <Svg.MicSlash fill={'white'} width={60} height={60}/>
+                </ButtonIcon>
+            </ButtonRow>
+        </Footer>
 
         </LinearGradient>
     )
@@ -64,5 +70,10 @@ export const CallScreen = ({ peerNickname, onEndCall, mediaDevice, remoteSrc, co
 const styles = StyleSheet.create({
     linearGradient: {
         flex: 1,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        position: "absolute",
     },
 });

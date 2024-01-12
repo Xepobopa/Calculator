@@ -2,7 +2,7 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:Calculator.xcodeproj">
+      location = "group:/Users/dima/Desktop/&#x420;&#x430;&#x431;&#x43e;&#x442;&#x430;/Calculator/Prod/Calculator/ios/SChat.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:Pods/Pods.xcodeproj">

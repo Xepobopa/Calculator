@@ -183,7 +183,7 @@ class PeerConnection extends Emitter {
                 channel.addEventListener('message', (data: any) => {
                     const res: TMessage = JSON.parse(this.security.decryptObject(data.data)) as TMessage;
                     // TODO: Remove ToSting() in prod
-                    if (res.type === "Internal" as TMessageEnum) {
+                    if (res.type === TMessageEnum.Internal) {
                         console.log('[INFO] RES IS INTERNAL!!!')
                         cb(res as TInternalMessage);
                     }

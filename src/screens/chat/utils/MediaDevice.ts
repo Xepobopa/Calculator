@@ -30,7 +30,27 @@ class MediaDevice extends Emitter {
             })
         }
 
-        return this
+        return this;
+    };
+
+    unmute(type: string) {
+        if (this.stream) {
+            this.stream[`get${type}Tracks`]().forEach((t: any) => {
+                t.enabled = true;
+            })
+        }
+
+        return this;
+    }
+
+    mute(type: string) {
+        if (this.stream) {
+            this.stream[`get${type}Tracks`]().forEach((t: any) => {
+                t.enabled = false
+            })
+        }
+
+        return this;
     }
 
     stop() {

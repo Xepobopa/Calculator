@@ -5,13 +5,15 @@ export const MainWindowView = styled(View)`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.5);
+  /* background-color: rgba(255, 255, 255, 0.5); */
+  background-color: #292929;
   border-radius: 6px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   text-align: center;
   flex-direction: column;
   padding: 40px;
   width: 300px;
+  border: 0.5px solid rgba(0, 0, 0, 0.7);
   max-height: 400px
 `
 
@@ -27,14 +29,14 @@ export const MainWindowLocalId = styled(View)`
 
 export const MainWindowLocalIdText = styled(Text)`
   font-size: 18px;
-  color: black;
+  color: white;
 `
 
 export const MainWindowTitle = styled(Text)`
   font-size: 25px;
   margin-bottom: 5px;
   font-weight: bold;
-  color: black;
+  color: white;
 `
 export const MainWindowRemoteId = styled(View)`
   flex-direction: column;
@@ -54,13 +56,16 @@ export const MainWindowTextInput = styled(TextInput)`
   padding: 5px;
   text-align: center;
   font-size: 18px;
-  color: black;
-  border-bottom-color: black;
-  border-bottom-width: 1px;
+  color: white;
+  /* background-color: rgba(255, 255, 255, 0.7); */
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0px;
+  border-bottom-color: white;
+  border-bottom-width: 0.5px;
 `
 
 export const MainWindowButtonIcon = styled(TouchableOpacity)`
-  background-color: #0275d8;
+  background-color: rgba(0, 0, 0, 0.4);
   padding: 13px;
   border-radius: 25px;
   margin-top: 10px;

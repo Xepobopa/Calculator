@@ -1,9 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import { GestureResponderEvent, StyleSheet, Vibration, Appearance, SafeAreaView, View, Keyboard } from "react-native";
+import { GestureResponderEvent, StyleSheet, Vibration, Appearance, SafeAreaView, View, Keyboard, Text } from "react-native";
 import { Svg } from "../../../../assets/icons";
 import {
-    ButtonContainer,
-    ButtonIcon,
     ButtonIconBackward,
     ButtonIconCall,
     ButtonIconDisable,
@@ -17,31 +15,26 @@ import {
     Title,
     Window
 } from "./styled";
-import { RTCView } from "react-native-webrtc";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import Sound from "react-native-sound";``
 import { CallWindowProps } from './types';
 import { Message } from './Chat/Message/Message';
 import { ThemeProvider } from 'styled-components';
-import { ChatContext, PeerConnectionContext } from '../../chat';
+import { PeerConnectionContext } from '../../chat';
 import {v4 as uuidv4} from 'uuid';
 import { TInternalMessage, TMessageEnum, TUserMessage } from '../../types/chat';
-import { Text } from 'react-native-svg';
-import { NavigationContext, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import socket from '../../utils/socket';
 
 export const CallWindow = ({
-    remoteSrc,
-    localSrc,
     config,
-    mediaDevice,
     finishCall,
     chat,
     nickname,
-    setPeerNicknameFunc
+    setPeerNicknameFunc,
+    startAudioCalling,
+    chatStatus
 }: CallWindowProps) => {
-    const remoteVideo = useRef<any>();
-    const localVideo = useRef<any>();
-    const [audio, setAudio] = useState(config?.audio);
     const [newMessageText, setNewMessageText] = useState<string>('');
     const beepEndSoundRef = useRef<Sound>(null!);
     const [peerNickname, setPeerNickname] = useState<string>('');
@@ -51,28 +44,20 @@ export const CallWindow = ({
     const { connection } = useContext(PeerConnectionContext);
     const navigation = useNavigation();
 
-    // function activateKeepAwake() {
-    //     NativeModules.KCKeepAwake.activate();
-    //     console.log('start KCKeepAwake!')
-    // }
-
-    // function deactivateKeepAwake() {
-    //     console.log('end KCKeepAwake!')
-    //     NativeModules.KCKeepAwake.deactivate();
-    // }
-
-    // listen for any internal messages
-
+    connection?.mediaDevice.mute('Audio');
     useEffect(() => {
         // send internal message to hand over a nickname
+        connection?.mediaDevice.mute('Audio');
         setTimeout(() => {
-            connection?.sendMessage({ peerNickname: nickname } as TInternalMessage);   
-        }, 1000)     
+            console.log('User Nickname sended');
+            connection?.sendMessage({ peerNickname: nickname, type: TMessageEnum.Internal } as TInternalMessage);   
+        }, 5000)     
         connection?.listenInternalMessages((message: TInternalMessage) => {
             setPeerNickname(message.peerNickname);
             setPeerNicknameFunc(message.peerNickname);
             console.log('PeerNickname is -> ', message.peerNickname, "!!!");
         });
+
 
         Appearance.addChangeListener(({ colorScheme }) => {
             setTheme(colorScheme || 'light');
@@ -80,7 +65,7 @@ export const CallWindow = ({
 
         Vibration.vibrate([0.3, 0.3]);
         // activateKeepAwake(); 
-    }, [])
+    }, []);
 
     useEffect(() => {
         beepEndSoundRef.current = new Sound('end_beep.mp3', Sound.MAIN_BUNDLE, (err) => {
@@ -97,28 +82,6 @@ export const CallWindow = ({
             })
         })
     }, [])
-
-    // useEffect(() => {
-    //     if (remoteVideo.current && remoteSrc) {
-    //         remoteVideo.current.srcObject = remoteSrc
-    //     }
-    //     if (localVideo.current && localSrc) {
-    //         localVideo.current.srcObject = localSrc
-    //     }
-    // }, [remoteSrc, localSrc])
-
-    // useEffect(() => {
-    //     if (mediaDevice) {
-    //         mediaDevice.toggle('Audio', audio)
-    //     }
-    // }, [mediaDevice])
-
-    // const toggleMediaDevice = (deviceType: 'audio' | 'video') => {
-    //     if (deviceType === 'audio') {
-    //         setAudio(!audio)
-    //         mediaDevice.toggle('Audio')
-    //     }
-    // }
 
     const onHandleChange = (text: string) => {
         setNewMessageText(text);
@@ -144,24 +107,13 @@ export const CallWindow = ({
             <Window>
                 <MainContainer>
                     <Header style={styles.headerBorderBottom}>
-                        <RTCView streamURL={remoteSrc.toURL()} />
-                            <RowContainer>
-                                <ButtonIconBackward onPress={onHandleBackward}>
-                                    <Svg.Backward fill={theme === 'light' ? '#000' : '#fff'}/>
-                                    <Text> Back</Text>
-                                </ButtonIconBackward>
-                                <Title>{peerNickname}</Title>
-                                <Svg.ConnectionP2P fill={theme === 'light' ? '#000' : '#fff'} />
-                            </RowContainer>
-                        <ButtonContainer>
-                            <ButtonIconDisable
-                            onPress={() => {
-                                // deactivateKeepAwake();
-                                finishCall(true)
-                            }}>
-                                <Svg.PhoneDisable fill={'#fff'} />
-                            </ButtonIconDisable>
-                        </ButtonContainer>
+                        <View style={{ flexDirection: 'row', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <ButtonIconBackward onPress={onHandleBackward}>
+                                <Svg.Backward fill={theme === 'light' ? '#000' : '#fff'}/>
+                            </ButtonIconBackward>
+                            <Title>{peerNickname === '' ? 'Loading...' : peerNickname}</Title>
+                        </View>
+                        {chatStatus && <Text style={{color: theme === 'light' ? '#fff' : '#000'}}>{chatStatus}</Text>}
                     </Header>
 
                 
@@ -182,7 +134,15 @@ export const CallWindow = ({
                             <SafeAreaView >
                                 <TextInputArea>
                                     <RowContainer>
-                                        <ButtonIconCall>
+                                        <ButtonIconDisable
+                                            onPress={() => {
+                                                finishCall(true)
+                                            }}>
+                                            <Svg.PhoneDisable fill={'#fff'} width={13} height={13}/>
+                                        </ButtonIconDisable>
+                                        <ButtonIconCall onPress={() => {
+                                            startAudioCalling();
+                                        }}>
                                             <Svg.Phone 
                                             fill={theme === "light" ? '#000' : '#fff'} 
                                             width={13} 

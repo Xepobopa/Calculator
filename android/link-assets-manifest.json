@@ -15,19 +15,39 @@
     },
     {
       "path": "src/assets/icons/index.ts",
-      "sha1": "f244f0ac5d3669caa3edd0a90cd787317cff4883"
+      "sha1": "fc144aa57a8358c1bcfff2b24faa5cbb13a3c530"
+    },
+    {
+      "path": "src/assets/icons/source/backward.svg",
+      "sha1": "16676b36fd4588cd2f5672218b9208a6f6dac7ec"
     },
     {
       "path": "src/assets/icons/source/connection_p2p.svg",
       "sha1": "5336455e81976cbac79a2ed2ead183bf05e1936d"
     },
     {
+      "path": "src/assets/icons/source/mic_slash.svg",
+      "sha1": "a7da3d2c6bb1bdcc3303cf6e1154195f70c9509f"
+    },
+    {
+      "path": "src/assets/icons/source/phone.svg",
+      "sha1": "7d3aed3286144808fd241d9779da17c80795adda"
+    },
+    {
+      "path": "src/assets/icons/source/phone_arrow_up.svg",
+      "sha1": "1836a728290dfc175c5314123b0f2f05d368632a"
+    },
+    {
       "path": "src/assets/icons/source/phone_disable.svg",
       "sha1": "03c86329a2e03a3cb1c195868d0c7f6cbfdf0de6"
     },
     {
+      "path": "src/assets/icons/source/phone_down.svg",
+      "sha1": "670831b5ed20fa5449a823591321fe3877c57ffa"
+    },
+    {
       "path": "src/assets/icons/source/send.svg",
-      "sha1": "8eaa432687b7f3b703296e065163f4761a8caeb9"
+      "sha1": "15bc830f114bdab9fe425ffb8de70e4929e937f2"
     },
     {
       "path": "src/assets/icons/source/smartphone.svg",

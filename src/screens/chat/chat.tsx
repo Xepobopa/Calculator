@@ -41,10 +41,11 @@ export default function Chat() {
 
     const [connection, setConnection] = useState<boolean>(false);
 
-    const [callFrom, setCallFrom] = useState<string | null>(null);
+    const [callFrom, setCallFrom] = useState<string>('');
     const [calling, setCalling] = useState<boolean>(false);
 
     const [showModal, setShowModal] = useState(false);
+    const [callWindow, setCallWindow] = useState(false);
     const [showCallingScreen, setShowCallingScreen] = useState<boolean>(false);
     const [showCallScreen, setShowCallScreen] = useState<boolean>(false);
 
@@ -57,6 +58,7 @@ export default function Chat() {
     const [chat, setChat] = useState<TUserMessage[]>([]);
     const [nickname, setNickname] = useState<string>('');
     const [peerNickname, setPeerNickname] = useState<string>('');
+    const [chatStatus, setChatStatus] = useState<string>('');
 
     // const [sideRequestsIntervalId, setSideRequestsIntervalId] = useState<Timeout>(null!);
 
@@ -69,7 +71,6 @@ export default function Chat() {
             setShowModal(true)
             setTimeout(() => {
                 if (!calling) {
-                    setCallFrom(null)
                     setShowModal(false);
                 }
             }, +REQUEST_TIMEOUT_MS)
@@ -113,6 +114,27 @@ export default function Chat() {
             .on('end', () => finishCall(false))
             console.log('End UseEffect #2')
     }, [pc])
+
+    useEffect(() => {
+        socket.on('voiceCallStart', (data) => {
+            console.log('Start audio call fromm another peer!');
+            setShowCallingScreen(true);
+        })
+        .on('voiceCallReject', (data) => {
+            console.log('Audio Calling Rejected!')
+            setChatStatus('User rejected call!');
+            setTimeout(() => {
+                setChatStatus('');
+            }, 5000);
+        })
+        .on('voiceCallSuccess', (data) => {
+            console.log('Start Call');
+            setShowCallScreen(true);
+        })
+        .on('voiceCallEnd', (data) => {
+            setShowCallScreen(false);
+        });
+    }, []);
 
     // const genRandString = (length: number) => {
     //     let result = '';
@@ -189,19 +211,20 @@ export default function Chat() {
 
         const _pc = new PeerConnection(remoteId, security.current!)
             .on('localStream', (stream: any) => {
-                console.log('onLocalStream Start!');
                 setLocalSrc(stream)
             })
             .on('remoteStream', (stream: any) => {
-                console.log('onRemoteStream Start!');
                 setConnection(true);
                 setRemoteSrc(stream)
+                setCallWindow(true);
                 setCalling(false)
             })
-            .start(isCaller, {} as MediaDeviceConfigType)
+            .start(isCaller, {audio: true, video: false} as MediaDeviceConfigType);
             console.log('PC Start!');
             _pc.listenMessages(onMessageReceive);
-        setPc(_pc)
+        setPc(_pc);
+
+        setCallFrom(remoteId);
 
         console.log('Request timeout => ', REQUEST_TIMEOUT_MS);
 
@@ -209,6 +232,8 @@ export default function Chat() {
 
     const finishCall = (isCaller: boolean) => {
         console.log('[INFO] Finish Call');
+
+        setCallWindow(false);
 
         pc?.stop(isCaller)
         // stopSideRequests();
@@ -235,11 +260,6 @@ export default function Chat() {
 
     const onMessageReceive = (newMessage: TUserMessage) => {
         setChat(prevState => [...prevState, newMessage]);
-    }
-
-    const onNewMessage = (message: TUserMessage) => {
-        setChat(prevState => [...prevState, message]);
-        pc?.sendMessage(message);
     }
 
     const startBeep = () => {
@@ -274,21 +294,34 @@ export default function Chat() {
         console.log('Reject!');
         setShowCallingScreen(false);
         stopRingtone();
+
+        console.log('From -> ', callFrom);
+        socket.emit('voiceCallReject', { to: callFrom });
     }
 
     const onCallingSuccess = () => {
+        socket.emit('voiceCallSuccess', { to: callFrom });
+        setShowCallingScreen(false);
         setShowCallScreen(true);
         stopRingtone();
     }
 
-    const onCallEnd = () => {
+    const onStartCallig = () => {
+        console.log('Start audio call to -> ', callFrom);
+        socket.emit('voiceCallStart', { nickname, to: callFrom });
+        setChatStatus('Calling');
+    }
+
+    const onAudicallEnd = () => {
         setShowCallScreen(false);
+        socket.emit('voiceCallEnd', { to: callFrom });
     }
 
     return (
-        <LinearGradient start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            colors={['#f64f59', '#c471ed', '#12c2e9']}
-            style={styles.linearGradient}>
+        // <LinearGradient start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        //     colors={['#6d6e70', '#383b42']}
+        //     style={styles.linearGradient}>
+        <View style={{...styles.linearGradient, backgroundColor: "#1e1e1e"}}>
             <View style={styles.app}>
                 <Text style={styles.appTitle}>Secret Chat</Text>
                 <Text style={styles.appError}>{error}</Text>
@@ -303,19 +336,24 @@ export default function Chat() {
                     />
                 )}
                 <PeerConnectionContext.Provider value={{ connection: pc! }}>
-                    {remoteSrc && (
-                        
+                    {(callWindow) && (
                             <CallWindow
-                                localSrc={localSrc}
-                                remoteSrc={remoteSrc}
                                 config={config}
-                                mediaDevice={pc?.mediaDevice}
                                 finishCall={finishCall}
                                 chat={chat}
                                 nickname={nickname}
                                 setPeerNicknameFunc={setPeerNickname}
+                                startAudioCalling={onStartCallig}
+                                chatStatus={chatStatus}
                                 />
                         
+                    )}
+                    {showCallScreen && (
+                        <CallScreen 
+                            peerNickname={peerNickname}
+                            onEndCall={onAudicallEnd}
+                            remoteSrc={remoteSrc}
+                            config={config}/>
                     )}
                     {showCallingScreen && (
                         <CallingScreen 
@@ -323,16 +361,10 @@ export default function Chat() {
                             onReject={onCallingReject}
                             onSuccess={onCallingSuccess}/>
                     )}
-                    {
-                        showCallScreen && (
-                            <CallScreen 
-                                peerNickname={peerNickname}
-                                onEndCall={onCallEnd}
-                                />
-                    )}
                 </PeerConnectionContext.Provider>
             </View>
-        </LinearGradient>
+        </View>
+        // {/* </LinearGradient> */}
     )
 }
 
@@ -349,11 +381,11 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     appTitle: {
-        color: "black",
+        color: "white",
         fontSize: 35,
         position: 'absolute',
+        fontWeight: "700",
         top: 50,
-        fontFamily: 'Montserrat-Black',
     },
     appError: {
         color: "#6e0b00",

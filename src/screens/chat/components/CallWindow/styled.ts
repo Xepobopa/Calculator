@@ -53,12 +53,9 @@ export const ButtonIconSend = styled(ButtonIcon)`
 `
 
 export const ButtonIconBackward = styled(ButtonIcon)`
-  padding: 0;
-  margin: 0;
-  flex: 1;
+  flex: 0;
   left: 0;
-  align-items: normal;
-  margin-left: 10px;
+  margin-left: 15px;
 `
 
 //background-color: "#0275d8";
@@ -71,12 +68,14 @@ export const ButtonIconBackward = styled(ButtonIcon)`
 
 export const ButtonIconDisable = styled(ButtonIcon)`
   background-color: #d9534f;
+  margin: 0;
+  margin-left: 10px
 `
 
 export const Title = styled(Text)`
+  text-align: center;
   color: ${props => props.theme.main === 'light' ? '#000' : '#fff'};
   padding: 10px 5px;
-  text-align: center;
   font-size: 27px;
 `
 
@@ -88,6 +87,7 @@ export const StyledTextInput = styled.TextInput`
   margin-right: 5px;
   font-size: 18px;
   border-radius: 20px;
+  padding-right: 40px;
   background-color: ${props => (props.theme.main === 'light' ? 'white' : 'black')};
 `
 
